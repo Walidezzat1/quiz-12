@@ -88,6 +88,15 @@
                 <div id="sending-status" class="text-lg font-bold text-blue-600 py-2">
                     جاري إرسال النتيجة مباشرة إلى المعلم ⏳...
                 </div>
+                
+                <!-- إضافة قسم النسخ اليدوي كخطة بديلة -->
+                <div id="manual-copy-section" class="hidden mt-4 text-right border-t pt-4">
+                    <h3 class="font-bold text-sm mb-3 text-red-600">⚠️ تعذر الإرسال التلقائي! انسخ النتيجة وأرسلها في تيمز:</h3>
+                    <textarea id="copy-text-area" readonly class="w-full h-32 p-3 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm mb-4 resize-none"></textarea>
+                    <button onclick="copyToClipboard()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition flex items-center justify-center gap-2">
+                        نسخ النتيجة
+                    </button>
+                </div>
             </div>
             
             <button onclick="location.reload()" class="text-gray-500 hover:text-gray-800 font-medium underline">
@@ -333,8 +342,8 @@
                 const dateStr = now.toLocaleDateString('ar-EG');
                 const timeStr = now.toLocaleTimeString('ar-EG');
                 
-                // استخدام <br> لأن تيمز يقرأها كسطر جديد
-                const reportText = `✅ <b>نتيجة اختبار الفيزياء (توليد عشوائي)</b><br>` +
+                // رسالة بتنسيق HTML لتيمز
+                const htmlMessage = `✅ <b>نتيجة اختبار الفيزياء (توليد عشوائي)</b><br>` +
                                  `----------------------------<br>` +
                                  `👤 <b>اسم الطالب:</b> ${studentName}<br>` +
                                  `🔢 <b>الرقم المدني:</b> ${civilId}<br>` +
@@ -342,13 +351,23 @@
                                  `📅 <b>التاريخ:</b> ${dateStr} - ${timeStr}<br>` +
                                  `----------------------------`;
 
+                // رسالة نصية عادية للنسخ اليدوي (الخطة البديلة)
+                const plainMessage = `✅ نتيجة اختبار الفيزياء (توليد عشوائي)\n` +
+                                 `----------------------------\n` +
+                                 `👤 اسم الطالب: ${studentName}\n` +
+                                 `🔢 الرقم المدني: ${civilId}\n` +
+                                 `🎯 الدرجة النهائية: ${finalScore} من 5\n` +
+                                 `📅 التاريخ: ${dateStr} - ${timeStr}\n` +
+                                 `----------------------------\n` +
+                                 `*هذه رسالة موثقة من نظام الاختبارات*`;
+
                 // إرسال البيانات مباشرة إلى تيمز
-                sendToTeams(reportText);
+                sendToTeams(htmlMessage, plainMessage);
             }, 1000); 
         }
 
         // دالة الإرسال المباشر إلى تيمز
-        function sendToTeams(message) {
+        function sendToTeams(htmlMessage, plainMessage) {
             const statusEl = document.getElementById('sending-status');
             
             // إرسال الطلب إلى Webhook
@@ -358,7 +377,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ 
-                    text: message 
+                    text: htmlMessage 
                 })
             })
             .then(response => {
@@ -369,9 +388,28 @@
                 }
             })
             .catch(error => {
-                statusEl.innerHTML = `<span class="text-red-500">❌ حدث خطأ أثناء الإرسال بسبب قيود الشبكة. يرجى إبلاغ المعلم بنتيجتك.</span>`;
+                // تفعيل الخطة البديلة في حال منع المتصفح الإرسال (CORS)
+                statusEl.innerHTML = `<span class="text-red-500 text-sm font-bold">❌ منع المتصفح الإرسال التلقائي لـ Teams بسبب قيود الأمان.<br>يرجى نسخ النتيجة يدوياً من الأسفل وإرسالها للمعلم.</span>`;
+                document.getElementById('manual-copy-section').classList.remove('hidden');
+                document.getElementById('copy-text-area').value = plainMessage;
                 console.error('Error:', error);
             });
+        }
+
+        // دالة نسخ النتيجة (للخطة البديلة)
+        function copyToClipboard() {
+            const textArea = document.getElementById('copy-text-area');
+            textArea.select();
+            textArea.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+                alert("تم نسخ النتيجة بنجاح! الصقها الآن لمعلمك في تيمز.");
+            } catch (err) {
+                navigator.clipboard.writeText(textArea.value).then(() => {
+                    alert("تم نسخ النتيجة بنجاح! الصقها الآن لمعلمك في تيمز.");
+                });
+            }
         }
     </script>
 </body>
