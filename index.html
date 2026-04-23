@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الفيزياء - الصف الثاني عشر</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .radio-custom:checked + div {
+            background-color: #eff6ff;
+            border-color: #3b82f6;
+        }
+        .radio-custom:checked + div .radio-dot {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen flex items-center justify-center p-4">
+
+    <div id="app-container" class="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden fade-in relative">
+        <!-- Header -->
+        <div class="bg-blue-600 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold mb-2">اختبار الفيزياء القصير</h1>
+            <p class="text-blue-100">الصف الثاني عشر العلمي - الفصل الدراسي الثاني</p>
+        </div>
+
+        <!-- Screen 1: Login -->
+        <div id="screen-login" class="p-8 block">
+            <div class="mb-6 text-center">
+                <p class="text-gray-600 mb-4">يرجى إدخال بياناتك بدقة لبدء الاختبار. يتكون الاختبار من 5 أسئلة عشوائية.</p>
+            </div>
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-bold mb-2 text-gray-700">الاسم الثلاثي</label>
+                    <input type="text" id="student-name" placeholder="أدخل اسمك الكامل..." class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2 text-gray-700">الرقم المدني</label>
+                    <input type="number" id="civil-id" placeholder="أدخل رقمك المدني (12 رقم)..." class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                </div>
+                <button onclick="startQuiz()" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 transform hover:scale-[1.02]">
+                    بدء الاختبار الآن
+                </button>
+            </div>
+        </div>
+
+        <!-- Screen 2: Quiz -->
+        <div id="screen-quiz" class="p-8 hidden">
+            <div class="flex justify-between items-center mb-6 pb-4 border-b">
+                <div class="font-bold text-blue-600" id="student-info-display"></div>
+                <div class="bg-blue-100 text-blue-800 py-1 px-3 rounded-full text-sm font-bold" id="question-counter"></div>
+            </div>
+            
+            <div id="quiz-container" class="space-y-8">
+                <!-- Questions will be injected here -->
+            </div>
+
+            <button onclick="submitQuiz()" class="w-full mt-8 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 transform hover:scale-[1.02]">
+                تسليم الاختبار
+            </button>
+        </div>
+
+        <!-- Screen 3: Results -->
+        <div id="screen-result" class="p-8 hidden text-center">
+            <div class="mb-6">
+                <div id="score-circle" class="w-32 h-32 mx-auto bg-blue-50 border-4 border-blue-500 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                    <span class="text-4xl font-black text-blue-600" id="final-score"></span>
+                </div>
+                <h2 class="text-2xl font-bold mb-2" id="result-message"></h2>
+                <p class="text-gray-600" id="result-details"></p>
+            </div>
+
+            <div class="bg-gray-50 rounded-xl p-6 mb-6 text-right border border-gray-200">
+                <h3 class="font-bold text-lg mb-4 text-gray-800 border-b pb-2">تفاصيل التسليم لمعلم المادة (Teams)</h3>
+                <textarea id="copy-text-area" readonly class="w-full h-32 p-3 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm mb-4 resize-none"></textarea>
+                
+                <button onclick="copyToClipboard()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    نسخ النتيجة لإرسالها في تيمز
+                </button>
+                <p class="text-xs text-gray-500 mt-3 text-center">قم بالنسخ ولصق النص كإجابة في تطبيق مايكروسوفت تيمز</p>
+            </div>
+            
+            <button onclick="location.reload()" class="text-gray-500 hover:text-gray-800 font-medium underline">
+                إجراء اختبار جديد لطالب آخر
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // بنك الأسئلة - تم استخراجه من مذكرات الصف الثاني عشر
+        const questionPool = [
+            {
+                question: "وحدة قياس التدفق المغناطيسي بحسب النظام الدولي هي (الويبر Wb) وتكافئ:",
+                options: ["فولت . ثانية", "تسلا . متر", "أمبير . ثانية", "كولوم . متر"],
+                answer: "فولت . ثانية"
+            },
+            {
+                question: "ينعدم التدفق المغناطيسي عندما تكون الزاوية بين خطوط المجال المغناطيسي ومتجه مساحة السطح تساوي:",
+                options: ["90 درجة", "صفر درجة", "45 درجة", "60 درجة"],
+                answer: "90 درجة"
+            },
+            {
+                question: "جهاز يحول جزءاً من الطاقة الميكانيكية المبذولة لتحريك الملف في المجال المغناطيسي إلى طاقة كهربائية:",
+                options: ["المولد الكهربائي", "المحرك الكهربائي", "المحول الكهربائي", "المكثف"],
+                answer: "المولد الكهربائي"
+            },
+            {
+                question: "في دائرة التيار المتردد التي تحتوي على مقاومة صرفة (أومية) فقط، فإن فرق الجهد والتيار الكهربائي:",
+                options: ["متفقان في الطور", "الجهد يسبق التيار بربع دورة", "التيار يسبق الجهد بربع دورة", "متعاكسان في الاتجاه"],
+                answer: "متفقان في الطور"
+            },
+            {
+                question: "الممانعة التي يبديها المكثف لمرور التيار المتردد خلاله تسمى:",
+                options: ["الممانعة السعوية", "الممانعة الحثية", "المقاومة الأومية", "الممانعة الكلية"],
+                answer: "الممانعة السعوية"
+            },
+            {
+                question: "عند إضافة ذرات من مادة خماسية التكافؤ كالزرنيخ إلى بلورة شبه الموصل النقية نحصل على بلورة من النوع:",
+                options: ["السالب (N-type)", "الموجب (P-type)", "المتعادل كهربائياً", "العازل تماماً"],
+                answer: "السالب (N-type)"
+            },
+            {
+                question: "تكتسب البلورة (N) عند التحامها مع البلورة (P) في الوصلة الثنائية جهداً:",
+                options: ["موجباً", "سالباً", "متعادلاً", "متذبذباً"],
+                answer: "موجباً"
+            },
+            {
+                question: "حسب فرضيات أينشتاين، طاقة الفوتون تتناسب:",
+                options: ["طردياً مع تردده", "عكسياً مع تردده", "طردياً مع طوله الموجي", "عكسياً مع سرعته"],
+                answer: "طردياً مع تردده"
+            },
+            {
+                question: "أقل مقدار للطاقة اللازمة لتحرير إلكترون من سطح الفلز دون إكسابه طاقة حركية يسمى:",
+                options: ["دالة الشغل", "طاقة التأين", "طاقة الربط النووية", "تردد العتبة"],
+                answer: "دالة الشغل"
+            },
+            {
+                question: "أنوية ذرات لعنصر واحد، لها نفس العدد الذري وتختلف في العدد الكتلي:",
+                options: ["النظائر", "الأيونات", "الفوتونات", "النيوكليونات"],
+                answer: "النظائر"
+            },
+            {
+                question: "النقص في كتلة النواة عن مجموع كتل مكوناتها (النيوكليونات) يتحول إلى:",
+                options: ["طاقة ربط نووية", "طاقة حركية", "طاقة إشعاعية", "طاقة حرارية"],
+                answer: "طاقة ربط نووية"
+            },
+            {
+                question: "أكثر العناصر استقراراً في الطبيعة هي الأنوية التي تكون فيها طاقة الربط لكل نيوكليون:",
+                options: ["أكبر ما يمكن", "أقل ما يمكن", "مساوية للصفر", "سالبة"],
+                answer: "أكبر ما يمكن"
+            },
+            {
+                question: "القوة الدافعة الكهربائية الحثية المتولدة في موصل تساوي سالب معدل التغير في التدفق المغناطيسي بالنسبة للزمن. هذا نص قانون:",
+                options: ["فاراداي", "لنز", "أوم", "كيرشوف"],
+                answer: "فاراداي"
+            },
+            {
+                question: "عندما يكون مستوى ملف المولد الكهربائي عمودياً على خطوط المجال المغناطيسي، فإن القوة الدافعة الكهربائية الحثية المتولدة تساوي:",
+                options: ["صفر", "قيمة عظمى موجبة", "قيمة عظمى سالبة", "نصف القيمة العظمى"],
+                answer: "صفر"
+            },
+            {
+                question: "حاملات الشحنة الأكثرية (السائدة) في شبه الموصل من النوع الموجب (P-type) هي:",
+                options: ["الثقوب (الفجوات)", "الإلكترونات الحرة", "الأيونات الموجبة", "الأيونات السالبة"],
+                answer: "الثقوب (الفجوات)"
+            }
+        ];
+
+        let selectedQuestions = [];
+        let studentName = "";
+        let civilId = "";
+        let finalScore = 0;
+
+        // دالة لخلط المصفوفة (Randomization)
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // بدء الاختبار
+        function startQuiz() {
+            const nameInput = document.getElementById('student-name').value.trim();
+            const idInput = document.getElementById('civil-id').value.trim();
+
+            if (nameInput.length < 3) {
+                alert("يرجى إدخال اسمك بشكل صحيح.");
+                return;
+            }
+            if (idInput.length < 8) {
+                alert("يرجى إدخال الرقم المدني بشكل صحيح.");
+                return;
+            }
+
+            studentName = nameInput;
+            civilId = idInput;
+
+            // اختيار 5 أسئلة عشوائية من البنك
+            const shuffledPool = shuffleArray([...questionPool]);
+            selectedQuestions = shuffledPool.slice(0, 5).map(q => {
+                return {
+                    question: q.question,
+                    answer: q.answer,
+                    options: shuffleArray([...q.options]) // خلط الخيارات أيضاً
+                };
+            });
+
+            renderQuiz();
+
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-quiz').classList.remove('hidden');
+            document.getElementById('student-info-display').innerText = `الطالب: ${studentName}`;
+            document.getElementById('question-counter').innerText = `5 أسئلة`;
+        }
+
+        // رسم الأسئلة في الواجهة
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+
+            selectedQuestions.forEach((q, index) => {
+                let optionsHtml = '';
+                q.options.forEach((opt, optIndex) => {
+                    optionsHtml += `
+                        <label class="block relative cursor-pointer group">
+                            <input type="radio" name="question-${index}" value="${opt}" class="radio-custom absolute opacity-0 w-0 h-0">
+                            <div class="border-2 border-gray-200 rounded-xl p-4 flex items-center transition duration-200 hover:bg-gray-50">
+                                <div class="radio-dot w-5 h-5 border-2 border-gray-300 rounded-full ml-4 flex-shrink-0 transition duration-200"></div>
+                                <span class="text-gray-700 font-medium">${opt}</span>
+                            </div>
+                        </label>
+                    `;
+                });
+
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm" id="q-block-${index}">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4"><span class="text-blue-600 ml-1">${index + 1}.</span> ${q.question}</h3>
+                        <div class="space-y-3">
+                            ${optionsHtml}
+                        </div>
+                        <p id="feedback-${index}" class="mt-4 text-sm font-bold hidden"></p>
+                    </div>
+                `;
+            });
+        }
+
+        // تسليم الاختبار وحساب النتيجة
+        function submitQuiz() {
+            let allAnswered = true;
+            finalScore = 0;
+
+            selectedQuestions.forEach((q, index) => {
+                const selectedOption = document.querySelector(`input[name="question-${index}"]:checked`);
+                if (!selectedOption) {
+                    allAnswered = false;
+                }
+            });
+
+            if (!allAnswered) {
+                alert("يرجى الإجابة على جميع الأسئلة قبل التسليم.");
+                return;
+            }
+
+            // تعطيل الاختيارات وإظهار التغذية الراجعة
+            selectedQuestions.forEach((q, index) => {
+                const selectedOption = document.querySelector(`input[name="question-${index}"]:checked`).value;
+                const feedbackEl = document.getElementById(`feedback-${index}`);
+                const qBlock = document.getElementById(`q-block-${index}`);
+                
+                const radios = document.querySelectorAll(`input[name="question-${index}"]`);
+                radios.forEach(radio => radio.disabled = true);
+
+                feedbackEl.classList.remove('hidden');
+                
+                if (selectedOption === q.answer) {
+                    finalScore++;
+                    qBlock.classList.add('border-green-300', 'bg-green-50');
+                    feedbackEl.classList.add('text-green-600');
+                    feedbackEl.innerText = "✓ إجابة صحيحة";
+                } else {
+                    qBlock.classList.add('border-red-300', 'bg-red-50');
+                    feedbackEl.classList.add('text-red-600');
+                    feedbackEl.innerText = `✗ إجابة خاطئة. الإجابة الصحيحة هي: ${q.answer}`;
+                }
+            });
+
+            showResults();
+        }
+
+        // عرض شاشة النتيجة
+        function showResults() {
+            document.getElementById('quiz-container').classList.add('pointer-events-none');
+            setTimeout(() => {
+                document.getElementById('screen-quiz').classList.add('hidden');
+                document.getElementById('screen-result').classList.remove('hidden');
+                
+                document.getElementById('final-score').innerText = `${finalScore} / 5`;
+                
+                const messageEl = document.getElementById('result-message');
+                if(finalScore === 5) {
+                    messageEl.innerText = "ممتاز! أداء استثنائي 🏆";
+                    messageEl.className = "text-2xl font-bold mb-2 text-green-600";
+                } else if(finalScore >= 3) {
+                    messageEl.innerText = "جيد جداً! أحسنت 👏";
+                    messageEl.className = "text-2xl font-bold mb-2 text-blue-600";
+                } else {
+                    messageEl.innerText = "تحتاج إلى مزيد من المراجعة 📚";
+                    messageEl.className = "text-2xl font-bold mb-2 text-orange-500";
+                }
+
+                document.getElementById('result-details').innerText = `الطالب: ${studentName} | المدني: ${civilId}`;
+
+                // تجهيز النص للنسخ
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('ar-EG');
+                const timeStr = now.toLocaleTimeString('ar-EG');
+                
+                const reportText = `✅ نتيجة اختبار الفيزياء (توليد عشوائي)\n` +
+                                 `----------------------------\n` +
+                                 `👤 اسم الطالب: ${studentName}\n` +
+                                 `🔢 الرقم المدني: ${civilId}\n` +
+                                 `🎯 الدرجة النهائية: ${finalScore} من 5\n` +
+                                 `📅 تاريخ الأداء: ${dateStr}\n` +
+                                 `⏰ وقت الأداء: ${timeStr}\n` +
+                                 `----------------------------\n` +
+                                 `*هذه رسالة موثقة من نظام الاختبارات*`;
+                                 
+                document.getElementById('copy-text-area').value = reportText;
+            }, 1000); // تأخير بسيط ليتمكن الطالب من رؤية التغذية الراجعة إن كان سريعاً
+        }
+
+        // نسخ النتيجة لتيمز
+        function copyToClipboard() {
+            const textArea = document.getElementById('copy-text-area');
+            textArea.select();
+            textArea.setSelectionRange(0, 99999); // للهواتف
+            
+            try {
+                document.execCommand('copy');
+                alert("تم نسخ النتيجة بنجاح! قم الآن بالذهاب إلى Teams وعمل 'لصق' (Paste) وإرسالها لمعلمك.");
+            } catch (err) {
+                // Fallback for modern browsers if execCommand fails
+                navigator.clipboard.writeText(textArea.value).then(() => {
+                    alert("تم نسخ النتيجة بنجاح! قم الآن بالذهاب إلى Teams وعمل 'لصق' (Paste) وإرسالها لمعلمك.");
+                }).catch(e => {
+                    alert("عذراً، يرجى تحديد النص الموجود في المربع ونسخه يدوياً.");
+                });
+            }
+        }
+    </script>
+</body>
+</html>
