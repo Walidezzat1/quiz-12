@@ -37,8 +37,24 @@
             <p class="text-blue-100">الصف الثاني عشر العلمي - الفصل الدراسي الثاني</p>
         </div>
 
+        <!-- Screen 0: Blocked (Already Taken) -->
+        <div id="screen-blocked" class="p-8 hidden text-center">
+            <div class="mb-6">
+                <div class="w-24 h-24 mx-auto bg-red-50 border-4 border-red-500 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                    <span class="text-4xl">🛑</span>
+                </div>
+                <h2 class="text-2xl font-bold mb-2 text-red-600">لقد أديت الاختبار مسبقاً!</h2>
+                <p class="text-gray-600 mb-6">تم تسجيل إجاباتك مسبقاً. لا يُسمح بإعادة الاختبار لضمان تكافؤ الفرص.</p>
+            </div>
+            <div class="border-t pt-6">
+                <button onclick="teacherReset()" class="text-gray-500 hover:text-gray-800 font-medium underline text-sm transition">
+                    هل أنت المعلم؟ (السماح بإعادة الاختبار)
+                </button>
+            </div>
+        </div>
+
         <!-- Screen 1: Login -->
-        <div id="screen-login" class="p-8 block">
+        <div id="screen-login" class="p-8 hidden">
             <div class="mb-6 text-center">
                 <p class="text-gray-600 mb-4">يرجى إدخال بياناتك بدقة لبدء الاختبار. يتكون الاختبار من 5 أسئلة عشوائية.</p>
             </div>
@@ -99,14 +115,25 @@
                 </div>
             </div>
             
-            <button onclick="location.reload()" class="text-gray-500 hover:text-gray-800 font-medium underline">
-                إجراء اختبار جديد لطالب آخر
+            <button onclick="teacherReset()" class="text-gray-500 hover:text-gray-800 font-medium underline transition">
+                إجراء اختبار لطالب آخر (للمعلم فقط)
             </button>
         </div>
 
     </div>
 
     <script>
+        // التحقق من حالة الاختبار عند فتح الصفحة (نظام الحماية)
+        window.onload = function() {
+            if(localStorage.getItem('physics_quiz_completed') === 'true') {
+                // الطالب أدى الاختبار مسبقاً
+                document.getElementById('screen-blocked').classList.remove('hidden');
+            } else {
+                // الطالب لم يؤدِ الاختبار
+                document.getElementById('screen-login').classList.remove('hidden');
+            }
+        };
+
         // بنك الأسئلة المحدث والشامل بناءً على بنك الأسئلة والمذكرات للصف 12
         const questionPool = [
             // --- الفصل الأول: الحث الكهرومغناطيسي ---
@@ -176,7 +203,7 @@
                 answer: "القصور الذاتي الدوراني"
             },
             {
-                question: "إذا دخلت شحنة كهربائية مجالاً مغناطيسياً منتظماً باتجاه يوازي خطوط المجال، فإن القوة المغناطيسية المؤثرة عليها تكون:",
+                question: "إذا دخلت شحنة كهربائية مجالاً مغناطيسياً منتظماً باتجاه يوازي خطوط المجال، فإن القوة المغناطيسية المؤثر عليها تكون:",
                 options: ["صفراً", "قيمة عظمى", "نصف القيمة العظمى", "سالبة"],
                 answer: "صفراً"
             },
@@ -469,6 +496,19 @@
             return array;
         }
 
+        // دالة السماح بإعادة الاختبار (للمعلم فقط)
+        function teacherReset() {
+            // الرمز السري هو 1234
+            let pass = prompt("هذه الخاصية للمعلم فقط.\nيرجى إدخال الرمز السري (1234) للسماح بإعادة الاختبار:");
+            if (pass === "1234") {
+                localStorage.removeItem('physics_quiz_completed');
+                alert("تم فتح القفل بنجاح! يمكن للطالب الآن أداء الاختبار.");
+                location.reload();
+            } else if (pass !== null) {
+                alert("الرمز السري غير صحيح!");
+            }
+        }
+
         // بدء الاختبار
         function startQuiz() {
             const nameInput = document.getElementById('student-name').value.trim();
@@ -580,6 +620,9 @@
 
         // عرض شاشة النتيجة
         function showResults() {
+            // تسجيل إنهاء الاختبار في ذاكرة المتصفح لمنع التكرار
+            localStorage.setItem('physics_quiz_completed', 'true');
+
             document.getElementById('quiz-container').classList.add('pointer-events-none');
             setTimeout(() => {
                 document.getElementById('screen-quiz').classList.add('hidden');
