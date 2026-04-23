@@ -83,17 +83,11 @@
                 <p class="text-gray-600" id="result-details"></p>
             </div>
 
-            <div class="bg-gray-50 rounded-xl p-6 mb-6 text-right border border-gray-200">
-                <h3 class="font-bold text-lg mb-4 text-gray-800 border-b pb-2">تفاصيل التسليم لمعلم المادة (Teams)</h3>
-                <textarea id="copy-text-area" readonly class="w-full h-32 p-3 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm mb-4 resize-none"></textarea>
-                
-                <button onclick="copyToClipboard()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition flex items-center justify-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                    </svg>
-                    نسخ النتيجة لإرسالها في تيمز
-                </button>
-                <p class="text-xs text-gray-500 mt-3 text-center">قم بالنسخ ولصق النص كإجابة في تطبيق مايكروسوفت تيمز</p>
+            <div class="bg-gray-50 rounded-xl p-6 mb-6 text-center border border-gray-200">
+                <h3 class="font-bold text-lg mb-4 text-gray-800 border-b pb-2">حالة الإرسال التلقائي</h3>
+                <div id="sending-status" class="text-lg font-bold text-blue-600 py-2">
+                    جاري إرسال النتيجة مباشرة إلى المعلم ⏳...
+                </div>
             </div>
             
             <button onclick="location.reload()" class="text-gray-500 hover:text-gray-800 font-medium underline">
@@ -187,6 +181,9 @@
         let studentName = "";
         let civilId = "";
         let finalScore = 0;
+
+        // --- 🔴 الرابط السري (Webhook) الخاص بتيمز تم إدراجه هنا ---
+        const TEAMS_WEBHOOK_URL = "https://default59e364a44f57487d9784a6fb0ac3f6.94.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/d30cdd3834d04cbd9590a0e5408b70e4/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=8S-i78XjkHMuUav1u8OEZiwXIYjbjJdGF1aqVZbgx_8";
 
         // دالة لخلط المصفوفة (Randomization)
         function shuffleArray(array) {
@@ -331,42 +328,50 @@
 
                 document.getElementById('result-details').innerText = `الطالب: ${studentName} | المدني: ${civilId}`;
 
-                // تجهيز النص للنسخ
+                // تجهيز النص للإرسال التلقائي
                 const now = new Date();
                 const dateStr = now.toLocaleDateString('ar-EG');
                 const timeStr = now.toLocaleTimeString('ar-EG');
                 
-                const reportText = `✅ نتيجة اختبار الفيزياء (توليد عشوائي)\n` +
-                                 `----------------------------\n` +
-                                 `👤 اسم الطالب: ${studentName}\n` +
-                                 `🔢 الرقم المدني: ${civilId}\n` +
-                                 `🎯 الدرجة النهائية: ${finalScore} من 5\n` +
-                                 `📅 تاريخ الأداء: ${dateStr}\n` +
-                                 `⏰ وقت الأداء: ${timeStr}\n` +
-                                 `----------------------------\n` +
-                                 `*هذه رسالة موثقة من نظام الاختبارات*`;
-                                 
-                document.getElementById('copy-text-area').value = reportText;
-            }, 1000); // تأخير بسيط ليتمكن الطالب من رؤية التغذية الراجعة إن كان سريعاً
+                // استخدام <br> لأن تيمز يقرأها كسطر جديد
+                const reportText = `✅ <b>نتيجة اختبار الفيزياء (توليد عشوائي)</b><br>` +
+                                 `----------------------------<br>` +
+                                 `👤 <b>اسم الطالب:</b> ${studentName}<br>` +
+                                 `🔢 <b>الرقم المدني:</b> ${civilId}<br>` +
+                                 `🎯 <b>الدرجة النهائية:</b> ${finalScore} من 5<br>` +
+                                 `📅 <b>التاريخ:</b> ${dateStr} - ${timeStr}<br>` +
+                                 `----------------------------`;
+
+                // إرسال البيانات مباشرة إلى تيمز
+                sendToTeams(reportText);
+            }, 1000); 
         }
 
-        // نسخ النتيجة لتيمز
-        function copyToClipboard() {
-            const textArea = document.getElementById('copy-text-area');
-            textArea.select();
-            textArea.setSelectionRange(0, 99999); // للهواتف
+        // دالة الإرسال المباشر إلى تيمز
+        function sendToTeams(message) {
+            const statusEl = document.getElementById('sending-status');
             
-            try {
-                document.execCommand('copy');
-                alert("تم نسخ النتيجة بنجاح! قم الآن بالذهاب إلى Teams وعمل 'لصق' (Paste) وإرسالها لمعلمك.");
-            } catch (err) {
-                // Fallback for modern browsers if execCommand fails
-                navigator.clipboard.writeText(textArea.value).then(() => {
-                    alert("تم نسخ النتيجة بنجاح! قم الآن بالذهاب إلى Teams وعمل 'لصق' (Paste) وإرسالها لمعلمك.");
-                }).catch(e => {
-                    alert("عذراً، يرجى تحديد النص الموجود في المربع ونسخه يدوياً.");
-                });
-            }
+            // إرسال الطلب إلى Webhook
+            fetch(TEAMS_WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    text: message 
+                })
+            })
+            .then(response => {
+                if(response.ok || response.status === 202) {
+                    statusEl.innerHTML = `<span class="text-green-600">✅ تم إرسال نتيجتك بنجاح إلى المعلم! يمكنك إغلاق الصفحة.</span>`;
+                } else {
+                    throw new Error('Network error');
+                }
+            })
+            .catch(error => {
+                statusEl.innerHTML = `<span class="text-red-500">❌ حدث خطأ أثناء الإرسال بسبب قيود الشبكة. يرجى إبلاغ المعلم بنتيجتك.</span>`;
+                console.error('Error:', error);
+            });
         }
     </script>
 </body>
