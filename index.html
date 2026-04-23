@@ -91,7 +91,7 @@
                 
                 <!-- إضافة قسم النسخ اليدوي كخطة بديلة -->
                 <div id="manual-copy-section" class="hidden mt-4 text-right border-t pt-4">
-                    <h3 class="font-bold text-sm mb-3 text-red-600">⚠️ تعذر الإرسال التلقائي! انسخ النتيجة وأرسلها في تيمز:</h3>
+                    <h3 class="font-bold text-sm mb-3 text-red-600">⚠️ تعذر الإرسال التلقائي بسبب حماية المتصفح! انسخ النتيجة وأرسلها في الواجب:</h3>
                     <textarea id="copy-text-area" readonly class="w-full h-32 p-3 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm mb-4 resize-none"></textarea>
                     <button onclick="copyToClipboard()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition flex items-center justify-center gap-2">
                         نسخ النتيجة
@@ -191,7 +191,7 @@
         let civilId = "";
         let finalScore = 0;
 
-        // --- 🔴 الرابط السري (Webhook) الخاص بتيمز تم إدراجه هنا بدقة ---
+        // --- 🔴 الرابط السري (Webhook) الخاص بتيمز ---
         const TEAMS_WEBHOOK_URL = "https://default59e364a44f57487d9784a6fb0ac3f6.94.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/d30cdd3834d04cbd9590a0e5408b70e4/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=8S-i78XjkHMuUav1u8OEZiwXIYjbjJdGF1aqVZbgx_8";
 
         // دالة لخلط المصفوفة (Randomization)
@@ -337,21 +337,11 @@
 
                 document.getElementById('result-details').innerText = `الطالب: ${studentName} | المدني: ${civilId}`;
 
-                // تجهيز النص للإرسال التلقائي
+                // تجهيز النص للنسخ اليدوي (كخطة بديلة)
                 const now = new Date();
                 const dateStr = now.toLocaleDateString('ar-EG');
                 const timeStr = now.toLocaleTimeString('ar-EG');
                 
-                // رسالة بتنسيق HTML لتيمز
-                const htmlMessage = `✅ <b>نتيجة اختبار الفيزياء (توليد عشوائي)</b><br>` +
-                                 `----------------------------<br>` +
-                                 `👤 <b>اسم الطالب:</b> ${studentName}<br>` +
-                                 `🔢 <b>الرقم المدني:</b> ${civilId}<br>` +
-                                 `🎯 <b>الدرجة النهائية:</b> ${finalScore} من 5<br>` +
-                                 `📅 <b>التاريخ:</b> ${dateStr} - ${timeStr}<br>` +
-                                 `----------------------------`;
-
-                // رسالة نصية عادية للنسخ اليدوي (الخطة البديلة)
                 const plainMessage = `✅ نتيجة اختبار الفيزياء (توليد عشوائي)\n` +
                                  `----------------------------\n` +
                                  `👤 اسم الطالب: ${studentName}\n` +
@@ -361,24 +351,55 @@
                                  `----------------------------\n` +
                                  `*هذه رسالة موثقة من نظام الاختبارات*`;
 
-                // إرسال البيانات مباشرة إلى تيمز
-                sendToTeams(htmlMessage, plainMessage);
+                // إرسال البيانات مباشرة إلى تيمز بالهيكلية الجديدة
+                sendToTeams(studentName, civilId, finalScore, dateStr, timeStr, plainMessage);
             }, 1000); 
         }
 
         // دالة الإرسال المباشر إلى تيمز
-        function sendToTeams(htmlMessage, plainMessage) {
+        function sendToTeams(studentName, civilId, finalScore, dateStr, timeStr, plainMessage) {
             const statusEl = document.getElementById('sending-status');
             
+            // بناء الرسالة بصيغة (Adaptive Card) التي يتطلبها نظام Workflows الجديد في تيمز
+            const adaptiveCardPayload = {
+                "type": "message",
+                "attachments": [
+                    {
+                        "contentType": "application/vnd.microsoft.card.adaptive",
+                        "content": {
+                            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                            "type": "AdaptiveCard",
+                            "version": "1.2",
+                            "body": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "✅ نتيجة اختبار الفيزياء (توليد عشوائي)",
+                                    "weight": "Bolder",
+                                    "size": "Medium",
+                                    "color": "Good"
+                                },
+                                {
+                                    "type": "FactSet",
+                                    "facts": [
+                                        { "title": "👤 اسم الطالب:", "value": studentName },
+                                        { "title": "🔢 الرقم المدني:", "value": civilId },
+                                        { "title": "🎯 الدرجة النهائية:", "value": finalScore + " من 5" },
+                                        { "title": "📅 وقت الأداء:", "value": dateStr + " - " + timeStr }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            };
+
             // إرسال الطلب إلى Webhook
             fetch(TEAMS_WEBHOOK_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
-                    text: htmlMessage 
-                })
+                body: JSON.stringify(adaptiveCardPayload)
             })
             .then(response => {
                 if(response.ok || response.status === 202) {
@@ -388,8 +409,8 @@
                 }
             })
             .catch(error => {
-                // تفعيل الخطة البديلة في حال منع المتصفح الإرسال (CORS)
-                statusEl.innerHTML = `<span class="text-red-500 text-sm font-bold">❌ منع المتصفح الإرسال التلقائي لـ Teams بسبب قيود الأمان.<br>يرجى نسخ النتيجة يدوياً من الأسفل وإرسالها للمعلم.</span>`;
+                // تفعيل الخطة البديلة في حال منع متصفح الطالب الإرسال
+                statusEl.innerHTML = `<span class="text-red-500 text-sm font-bold">❌ منع المتصفح الإرسال التلقائي بسبب قيود الأمان.<br>يرجى نسخ النتيجة يدوياً من الأسفل وإرسالها للمعلم.</span>`;
                 document.getElementById('manual-copy-section').classList.remove('hidden');
                 document.getElementById('copy-text-area').value = plainMessage;
                 console.error('Error:', error);
